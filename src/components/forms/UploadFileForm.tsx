@@ -1,11 +1,6 @@
 import { DocumentTextIcon } from '@heroicons/react/24/solid'
 import classNames from 'classnames';
 
-interface IOption {
-  key: number;
-  label: string;
-}
-
 interface IUploadFile {
   onChange?: (event: string) => void;
   loading?: boolean;
