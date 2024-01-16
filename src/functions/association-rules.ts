@@ -9,8 +9,6 @@ export function generateAssociationRules(dataset: any[], itemset: any[], minConf
       let confidence = calculateConfidence(dataset, antecedent, consequent);
       if (confidence >= minConfidence) {
         confidence = twoDecimalPlacesWithoutRound(confidence * 100);
-        console.log("confidence", confidence);
-        
         rules.push({ antecedent, consequent, confidence });
       }
     }
@@ -85,8 +83,6 @@ export function rulesList(dataset: any[], frequentItemsets: any[][], minConfiden
   const rulesList: any[] = [];
   for (let itemset of frequentItemsets) {
     const rules = generateAssociationRules(dataset, itemset, minConfidence / 100);
-    console.log("rules", rules);
-    
     for (let rule of rules) {
       const confidence = calculateConfidence(dataset, rule.antecedent, rule.consequent);
       const supportB = calculateSupport(dataset, rule.consequent);

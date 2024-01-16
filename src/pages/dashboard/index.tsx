@@ -61,7 +61,7 @@ export default function Dashboard() {
           </div>
           <div className="bg-white py-9 px-8 rounded-xl shadow-[0px_0px_20px_rgba(56,71,109,0.03)]">
             <h3 className="mb-6 text-3xl text-[#464E5F] font-semibold uppercase">
-              Apriori
+              Apriori & FP-Growth
             </h3>
             <div className="mb-6 text-gray-400">
               Metode data mining untuk mencari frekuensi hubungan atau pola hubungan antar atribut dalam dataset
@@ -87,7 +87,7 @@ export default function Dashboard() {
         <div className="grid gap-11">
           <div className="bg-white py-9 px-8 rounded-xl shadow-[0px_0px_20px_rgba(56,71,109,0.03)]">
             <h3 className="mb-6 text-xl text-[#464E5F] font-semibold uppercase">
-              Manfaat Apriori
+              Apriori & FP-Growth
             </h3>
             <ul className="ml-5 max-w-md space-y-1 text-gray-400 list-disc list-outside">
               <li>
@@ -109,7 +109,7 @@ export default function Dashboard() {
           </div>
           <div className="bg-white py-9 px-8 rounded-xl shadow-[0px_0px_20px_rgba(56,71,109,0.03)]">
             <h3 className="mb-6 text-xl text-[#464E5F] font-semibold uppercase">
-              Indikator Algoritma Apriori
+              Indikator Algoritma Apriori & FP-Growth
             </h3>
             <div className="mb-1.5 text-lg text-gray-500 font-semibold">
               Support (Penunjang)

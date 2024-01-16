@@ -47,7 +47,7 @@ export function UploadFile({
             'text-sm leading-5 text-gray-400 mt-1', {
             'opacity-70': notClick,
           })}>
-            XLS, XLSX, CSV hingga 10 MB
+            xls, xlsx hingga 10 MB
           </p>
         </div>
       </div>

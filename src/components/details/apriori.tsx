@@ -103,7 +103,7 @@ export default function Apriori(props: any) {
     {
       fieldId: 'description',
       label: 'Description',
-      renderItem: (description: string) => (
+      renderItem: (description: string, index: number) => (
         <span
           className={classNames(
             description === 'POSITIVE'
@@ -114,7 +114,18 @@ export default function Apriori(props: any) {
             'inline-flex items-center rounded px-2 py-1 text-xs'
           )}
         >
-          {description}
+          <Tooltip
+            id={`${index}-apriori-description-1`}
+            content={description === 'POSITIVE'
+              ? 'Menunjukkan bahwa hubungan antara item atau variabel yang dianalisis lebih sering terjadi daripada kejadian acak secara umum. Menunjukkan bahwa ada keterkaitan yang positif dan signifikan antara item-item tersebut.'
+              : description === 'NEGATIVE'
+                ? 'Menunjukkan bahwa hubungan antara item atau variabel yang dianalisis kurang sering terjadi dibandingkan dengan kejadian acak secara umum. Menunjukkan bahwa ada keterkaitan yang negatif atau tidak signifikan antara item-item tersebut.'
+                : 'Menunjukkan bahwa hubungan antara item atau variabel yang dianalisis memiliki tingkat kejadian yang sama dengan kejadian acak secara umum. Menunjukkan bahwa tidak ada hubungan khusus antara item-item tersebut.'}
+            place={"top"}
+          />
+          <div data-tooltip-id={`${index}-apriori-description-1`} className="truncate w-[60px] text-center hover:cursor-pointer">
+            {description}
+          </div>
         </span>
       ),
       width: 110

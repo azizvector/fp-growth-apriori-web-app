@@ -39,11 +39,9 @@ export default function Dashboard() {
       fieldId: 'algorithm',
       label: 'Algoritma',
       renderItem: (algorithm: string) => (<>
-        <div className="truncate w-[50px] text-left hover:cursor-pointer">
-          {algorithm}
-        </div>
+        {algorithm}
       </>),
-      width: 50
+      width: 150
     },
     {
       fieldId: 'processed_date',
@@ -52,22 +50,6 @@ export default function Dashboard() {
         {moment(processed_date).format('DD-MM-yyyy hh:mm')}
       </>),
       width: 140
-    },
-    {
-      fieldId: 'start_date',
-      label: 'Tanggal Mulai',
-      renderItem: (start_date: string) => (<>
-        {start_date ? moment(start_date).format('DD-MM-yyyy') : "Semua Tanggal"}
-      </>),
-      width: 130
-    },
-    {
-      fieldId: 'end_date',
-      label: 'Tanggal Akhir',
-      renderItem: (end_date: string) => (<>
-        {end_date ? moment(end_date).format('DD-MM-yyyy') : "Semua Tanggal"}
-      </>),
-      width: 130
     },
     {
       fieldId: 'min_support',
@@ -103,7 +85,7 @@ export default function Dashboard() {
     },
     {
       key: 3,
-      label: 'FP-Growth & Apriori'
+      label: 'Apriori & FP-Growth'
     },
   ];
 
@@ -240,7 +222,7 @@ export default function Dashboard() {
         <div className="bg-white py-9 px-8 rounded-xl shadow-[0px_0px_20px_rgba(56,71,109,0.03)]">
           <div className="mb-6 flex items-center justify-between gap-4">
             <h3 className="text-xl text-[#464E5F] font-semibold uppercase">
-              Proses Apriori
+              Proses Apriori & FP-Growth
             </h3>
           </div>
           <form className="space-y-6" onSubmit={handleSubmit(onSubmit)} autoComplete="off">

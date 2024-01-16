@@ -110,7 +110,7 @@ export default function Compare(props: any) {
           content={`${rule}`}
           place={"top"}
         />
-        <div data-tooltip-id={`${index}-rule-tooltip-1`} className="truncate w-[398px] text-left hover:cursor-pointer">
+        <div data-tooltip-id={`${index}-rule-tooltip-1`} className="truncate w-[200px] text-left hover:cursor-pointer">
           {rule}
         </div>
       </>)
@@ -126,7 +126,7 @@ export default function Compare(props: any) {
     {
       fieldId: 'description',
       label: 'Description',
-      renderItem: (description: string) => (
+      renderItem: (description: string, index: number) => (
         <span
           className={classNames(
             description === 'POSITIVE'
@@ -137,7 +137,18 @@ export default function Compare(props: any) {
             'inline-flex items-center rounded px-2 py-1 text-xs'
           )}
         >
-          {description}
+          <Tooltip
+            id={`${index}-fp-growth-description-1`}
+            content={description === 'POSITIVE'
+              ? 'Menunjukkan bahwa hubungan antara item atau variabel yang dianalisis lebih sering terjadi daripada kejadian acak secara umum. Menunjukkan bahwa ada keterkaitan yang positif dan signifikan antara item-item tersebut.'
+              : description === 'NEGATIVE'
+                ? 'Menunjukkan bahwa hubungan antara item atau variabel yang dianalisis kurang sering terjadi dibandingkan dengan kejadian acak secara umum. Menunjukkan bahwa ada keterkaitan yang negatif atau tidak signifikan antara item-item tersebut.'
+                : 'Menunjukkan bahwa hubungan antara item atau variabel yang dianalisis memiliki tingkat kejadian yang sama dengan kejadian acak secara umum. Menunjukkan bahwa tidak ada hubungan khusus antara item-item tersebut.'}
+            place={"top"}
+          />
+          <div data-tooltip-id={`${index}-fp-growth-description-1`} className="truncate w-[60px] text-center hover:cursor-pointer">
+            {description}
+          </div>
         </span>
       ),
       width: 110
@@ -146,25 +157,14 @@ export default function Compare(props: any) {
 
   const tabs = useMemo(
     () => {
-      let filteredTabs: any = []
       const itemTabs: any = [
         {
           label: "Ringkasan",
-          // page: <Apriori datas={datas.apriori} />
         },
         {
           label: "Detail",
-          // page: <FPGrowth datas={datas.fp_growth} />
         },
       ]
-
-      // if (datas.apriori && datas.fp_growth) {
-      //   filteredTabs = itemTabs
-      // } else {
-      //   if (datas.apriori) filteredTabs = itemTabs.filter((data: any) => data.label === "Apriori")
-      //   if (datas.fp_growth) filteredTabs = itemTabs.filter((data: any) => data.label === "FP-Growth")
-      // }
-
       return itemTabs;
     },
     []
@@ -263,6 +263,15 @@ export default function Compare(props: any) {
     }),
     [apriori, fp_growth]
   );
+
+  let percentAprioriProcessingTime = (apriori?.algorithm?.processing_time / (fp_growth?.algorithm?.processing_time + apriori?.algorithm?.processing_time)) * 100
+  let percentFPGrowthProcessingTime = (fp_growth?.algorithm?.processing_time / (fp_growth?.algorithm?.processing_time + apriori?.algorithm?.processing_time)) * 100
+
+  let percentAprioriProcessingFrequentItemsets = (apriori?.algorithm?.processing_frequent_itemsets / (fp_growth?.algorithm?.processing_frequent_itemsets + apriori?.algorithm?.processing_frequent_itemsets)) * 100
+  let percentFPGrowthProcessingFrequentItemsets = (fp_growth?.algorithm?.processing_frequent_itemsets / (fp_growth?.algorithm?.processing_frequent_itemsets + apriori?.algorithm?.processing_frequent_itemsets)) * 100
+
+  let percentAprioriProcessingAssociationRules = (apriori?.algorithm?.processing_association_rules / (fp_growth?.algorithm?.processing_association_rules + apriori?.algorithm?.processing_association_rules)) * 100
+  let percentFPGrowthProcessingAssociationRules = (fp_growth?.algorithm?.processing_association_rules / (fp_growth?.algorithm?.processing_association_rules + apriori?.algorithm?.processing_association_rules)) * 100
 
   return (<>
     <Tab.Group>
@@ -425,6 +434,10 @@ export default function Compare(props: any) {
                 <div className="flex flex-col w-[290px] h-[290px]">
                   <Doughnut data={processingTime} />
                 </div>
+                <div className="flex justify-between flex-row mt-5">
+                  <div>Apriori: {percentAprioriProcessingTime.toFixed(2)}% </div>
+                  <div>FP-Growth: {percentFPGrowthProcessingTime.toFixed(2)}%</div>
+                </div>
               </div>
             </div>
           </div>
@@ -439,6 +452,10 @@ export default function Compare(props: any) {
                 <div className="flex flex-col w-[290px] h-[290px] mx-auto">
                   <Doughnut data={processingAssociationRules} />
                 </div>
+                <div className="flex justify-between flex-row mt-5">
+                  <div>Apriori: {percentAprioriProcessingAssociationRules.toFixed(2)}% </div>
+                  <div>FP-Growth: {percentFPGrowthProcessingAssociationRules.toFixed(2)}%</div>
+                </div>
               </div>
             </div>
             <div className="col-span-1">
@@ -450,6 +467,10 @@ export default function Compare(props: any) {
                 </div>
                 <div className="flex flex-col w-[290px] h-[290px] mx-auto">
                   <Doughnut data={processingFrequentItemsets} />
+                </div>
+                <div className="flex justify-between flex-row mt-5">
+                <div>Apriori: {percentAprioriProcessingFrequentItemsets.toFixed(2)}% </div>
+                  <div>FP-Growth: {percentFPGrowthProcessingFrequentItemsets.toFixed(2)}%</div>
                 </div>
               </div>
             </div>
