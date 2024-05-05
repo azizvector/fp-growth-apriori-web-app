@@ -1,143 +1,52 @@
 import Layout from '@/layouts';
 import { Button, Table } from '@/components';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
 import moment from 'moment';
 import { twoDecimalPlacesWithoutRound } from '@/functions';
 import { Tooltip } from 'react-tooltip';
 import classNames from 'classnames';
+import { Tab } from '@headlessui/react'
+import Apriori from '../../components/details/apriori'
+import FPGrowth from '../../components/details/fp-growth'
+import Compare from '../../components/details/compare'
 
 export default function Dashboard() {
   const { query, push, back } = useRouter();
   const { id } = query;
 
-  const [datas, setDatas] = useState<any>({
-    confidence: [],
-    support: [],
-    summary: {
-      min_support: "",
-      min_confidence: "",
-      start_date: "",
-      end_date: "",
-      processed_date: "",
-      total_order: "",
-    }
-  });
+  const [datas, setDatas] = useState<any>({});
 
-  const headerSupport = [
-    {
-      fieldId: 'index',
-      label: 'No',
-      width: 60
-    },
-    {
-      fieldId: 'candidate',
-      label: 'Candidate',
-      renderItem: (candidate: string, index: number) => (<>
-        <Tooltip
-          id={`${index}-support-tooltip-1`}
-          content={`${candidate}`}
-          place={"top"}
-        />
-        <div data-tooltip-id={`${index}-support-tooltip-1`} className="truncate w-[235px] text-left hover:cursor-pointer">
-          {candidate}
-        </div>
-      </>)
-    },
-    {
-      fieldId: 'itemset',
-      label: 'Itemset',
-      width: 80
-    },
-    {
-      fieldId: 'support',
-      label: 'Support',
-      renderItem: (support: number) => (<>
-        {twoDecimalPlacesWithoutRound(support)}%
-      </>),
-      width: 80,
-    },
-  ];
+  const tabs = useMemo(
+    () => {
+      let filteredTabs: any = []
+      const itemTabs: any = [
+        {
+          label: "Apriori",
+          page: <Apriori datas={datas.apriori} />
+        },
+        {
+          label: "FP-Growth",
+          page: <FPGrowth datas={datas.fp_growth} />
+        },
+        {
+          label: "Perbandingan",
+          page: <Compare datas={datas} />
+        }
+      ]
 
-  const headerConfidence = [
-    {
-      fieldId: 'index',
-      label: 'No',
-      width: 60
-    },
-    {
-      fieldId: 'rule',
-      label: 'Rule',
-      renderItem: (rule: string, index: number) => (<>
-        <Tooltip
-          id={`${index}-confidence-tooltip-1`}
-          content={`${rule}`}
-          place={"top"}
-        />
-        <div data-tooltip-id={`${index}-confidence-tooltip-1`} className="truncate w-[315px] text-left hover:cursor-pointer">
-          {rule}
-        </div>
-      </>)
-    },
-    {
-      fieldId: 'confidence',
-      label: 'Confidence',
-      renderItem: (confidence: number) => (<>
-        {twoDecimalPlacesWithoutRound(confidence)}%
-      </>),
-      width: 80
-    },
-  ];
+      if (datas.apriori && datas.fp_growth) {
+        filteredTabs = itemTabs
+      } else {
+        if (datas.apriori) filteredTabs = itemTabs.filter((data: any) => data.label === "Apriori")
+        if (datas.fp_growth) filteredTabs = itemTabs.filter((data: any) => data.label === "FP-Growth")
+      }
 
-  const headerLiftRatio = [
-    {
-      fieldId: 'index',
-      label: 'No',
-      width: 60
+      return filteredTabs;
     },
-    {
-      fieldId: 'rule',
-      label: 'Rule',
-      renderItem: (rule: string, index: number) => (<>
-        <Tooltip
-          id={`${index}-rule-tooltip-1`}
-          content={`${rule}`}
-          place={"top"}
-        />
-        <div data-tooltip-id={`${index}-rule-tooltip-1`} className="truncate w-[398px] text-left hover:cursor-pointer">
-          {rule}
-        </div>
-      </>)
-    },
-    {
-      fieldId: 'lift',
-      label: 'Lift',
-      width: 80,
-      renderItem: (lift: number) => (<>
-        {twoDecimalPlacesWithoutRound(lift)}
-      </>),
-    },
-    {
-      fieldId: 'description',
-      label: 'Description',
-      renderItem: (description: string) => (
-        <span
-          className={classNames(
-            description === 'POSITIVE'
-              ? 'bg-[#DCFCE4] text-[#27A590]'
-              : description === 'NEGATIVE'
-                ? 'bg-[#FFEBEB] text-[#BB1616]'
-                : 'bg-[#E9E9E9] text-[#7C7C7C]',
-            'inline-flex items-center rounded px-2 py-1 text-xs'
-          )}
-        >
-          {description}
-        </span>
-      ),
-      width: 110
-    },
-  ];
+    [datas]
+  );
 
   useEffect(() => {
     const getSummaryDetails: any = async () => {
@@ -148,7 +57,7 @@ export default function Dashboard() {
         console.error(error.response.data.message);
       }
     }
-    getSummaryDetails();
+    if (id) getSummaryDetails();
   }, [id]);
 
   const handleDelete = async () => {
@@ -160,168 +69,90 @@ export default function Dashboard() {
     }
   };
 
+  console.log("tabs.length", tabs.length);
+  
   return (
     <div className="grid gap-11">
-      <div className="flex items-center justify-between gap-4">
-        <h3 className="text-3xl text-[#464E5F] font-semibold uppercase">
-          Detail Apriori
-        </h3>
-        <div className="flex items-center justify-between gap-4 ml-4">
-          <Button
-            title="Kembali"
-            color="secondary"
-            onClick={() => back()}
-          />
-          <Button
-            title="Hapus"
-            color="danger"
-            onClick={handleDelete}
-          />
-        </div>
-      </div>
-      <div className="grid grid-cols-1 gap-11">
-        <div className="col-span-1">
-          <div className="text-[#464E5F] bg-gray-50 py-9 px-8 rounded-xl space-y-3">
-            <span className="text-lg font-semibold">Catatan!</span>
-            <div className="space-y-1.5">
-              <span className="font-medium">Positive Correlation</span>
-              <div>Jika lift ratio lebih besar dari 1, itu menunjukkan bahwa hubungan antara item atau variabel yang dianalisis lebih sering terjadi daripada kejadian acak secara umum. Menunjukkan bahwa ada keterkaitan yang positif dan signifikan antara item-item tersebut.</div>
-            </div>
-            <div className="space-y-1.5">
-              <span className="font-medium">Negative Correlation</span>
-              <div>Jika lift ratio kurang dari 1, itu menunjukkan bahwa hubungan antara item atau variabel yang dianalisis kurang sering terjadi dibandingkan dengan kejadian acak secara umum. Menunjukkan bahwa ada keterkaitan yang negatif atau tidak signifikan antara item-item tersebut.</div>
-            </div>
-            <div className="space-y-1.5">
-              <span className="font-medium">Independent Correlation</span>
-              <div>Jika lift ratio sama dengan 1, itu menunjukkan bahwa hubungan antara item atau variabel yang dianalisis memiliki tingkat kejadian yang sama dengan kejadian acak secara umum. Menunjukkan bahwa tidak ada hubungan khusus antara item-item tersebut.</div>
-            </div>
+      <Tab.Group>
+        <div className="flex items-center justify-between gap-4">
+          <Tab.List className={classNames(
+            'flex', {
+            'bg-white rounded-xl': tabs.length === 3,
+          })}>
+            {tabs.length === 3 ? <>{
+              tabs.map((tab: any) => (
+                <Tab
+                  key={tab.label}
+                  className={({ selected }) =>
+                    classNames(
+                      'w-64 font-semibold uppercase px-6 py-4 rounded-xl focus:outline-none', {
+                      'text-[#274C77] bg-[#D8E5F3]': selected,
+                      'text-[#464E5F] hover:text-[#274C77]': !selected
+                    })
+                  }
+                >
+                  {tab.label}
+                </Tab>
+              ))}</> : <>{
+                tabs.map((tab: any) => (
+                  <Tab
+                    key={tab.label}
+                    className={({ selected }) =>
+                      classNames(
+                        'text-3xl font-semibold uppercase pointer-events-none focus:outline-none', {
+                        'text-[#464E5F]': selected,
+                      })
+                    }
+                  >
+                    {tab.label}
+                  </Tab>
+                ))
+              }</>
+            }
+          </Tab.List>
+          <div className="flex items-center justify-between gap-4 ml-4">
+            <Button
+              title="Kembali"
+              color="secondary"
+              onClick={() => back()}
+            />
+            <Button
+              title="Hapus"
+              color="danger"
+              onClick={handleDelete}
+            />
           </div>
         </div>
-      </div>
-      <div className="grid grid-cols-3 gap-11">
-        <div className="col-span-1">
-          <div className="bg-white py-9 px-8 rounded-xl shadow-[0px_0px_20px_rgba(56,71,109,0.03)]">
-            <div className="flex flex-col items-start justify-between gap-4">
-              <h3 className="mb-6 text-xl text-[#464E5F] font-semibold uppercase">
-                Information
-              </h3>
-              <div className="space-y-1">
-                <div className="text-gray-400">
-                  Support
-                </div>
-                <div className="text-lg text-gray-500 font-semibold">
-                  {datas?.summary?.min_support}%
-                </div>
+        {/* <div className="grid grid-cols-1 gap-11">
+          <div className="col-span-1">
+            <div className="text-[#464E5F] bg-gray-50 py-9 px-8 rounded-xl space-y-3">
+              <span className="text-lg font-semibold">Catatan!</span>
+              <div className="space-y-1.5">
+                <span className="font-medium">Positive Correlation</span>
+                <div>Jika lift ratio lebih besar dari 1, itu menunjukkan bahwa hubungan antara item atau variabel yang dianalisis lebih sering terjadi daripada kejadian acak secara umum. Menunjukkan bahwa ada keterkaitan yang positif dan signifikan antara item-item tersebut.</div>
               </div>
-              <div className="space-y-1">
-                <div className="text-gray-400">
-                  Confidence
-                </div>
-                <div className="text-lg text-gray-500 font-semibold">
-                  {datas?.summary?.min_confidence}%
-                </div>
+              <div className="space-y-1.5">
+                <span className="font-medium">Negative Correlation</span>
+                <div>Jika lift ratio kurang dari 1, itu menunjukkan bahwa hubungan antara item atau variabel yang dianalisis kurang sering terjadi dibandingkan dengan kejadian acak secara umum. Menunjukkan bahwa ada keterkaitan yang negatif atau tidak signifikan antara item-item tersebut.</div>
               </div>
-              <div className="space-y-1">
-                <div className="text-gray-400">
-                  Tanggal Mulai
-                </div>
-                <div className="text-lg text-gray-500 font-semibold">
-                  {datas?.summary?.end_date ? moment(datas?.summary?.start_date).format('DD-MM-yyyy') : "Semua Tanggal"}
-                </div>
-              </div>
-              <div className="space-y-1">
-                <div className="text-gray-400">
-                  Tanggal Akhir
-                </div>
-                <div className="text-lg text-gray-500 font-semibold">
-                  {datas?.summary?.end_date ? moment(datas?.summary?.end_date).format('DD-MM-yyyy') : "Semua Tanggal"}
-                </div>
-              </div>
-              <div className="space-y-1">
-                <div className="text-gray-400">
-                  Tanggal Proses
-                </div>
-                <div className="text-lg text-gray-500 font-semibold">
-                  {moment(datas?.summary?.processed_date).format('DD-MM-yyyy')}
-                </div>
-              </div>
-              <div className="space-y-1">
-                <div className="text-gray-400">
-                  Total Data
-                </div>
-                <div className="text-lg text-gray-500 font-semibold">
-                  {datas?.summary?.total_order}
-                </div>
+              <div className="space-y-1.5">
+                <span className="font-medium">Independent Correlation</span>
+                <div>Jika lift ratio sama dengan 1, itu menunjukkan bahwa hubungan antara item atau variabel yang dianalisis memiliki tingkat kejadian yang sama dengan kejadian acak secara umum. Menunjukkan bahwa tidak ada hubungan khusus antara item-item tersebut.</div>
               </div>
             </div>
           </div>
-        </div>
-        <div className="col-span-2">
-          <div className="bg-white py-9 px-8 rounded-xl shadow-[0px_0px_20px_rgba(56,71,109,0.03)]">
-            <div className="mb-6 flex flex-col">
-              <h3 className="mb-1.5 text-xl text-[#464E5F] font-semibold uppercase">
-                Lift Ratio
-              </h3>
-              <p className="text-gray-400">
-                Total {datas?.confidence.length}
-              </p>
-            </div>
-            <div className="flex flex-col">
-              <div className="border border-[#BDBDBD] rounded-lg">
-                <Table
-                  data={datas?.confidence}
-                  headers={headerLiftRatio}
-                  truncate={true}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-11">
-        <div className="col-span-1">
-          <div className="bg-white py-9 px-8 rounded-xl shadow-[0px_0px_20px_rgba(56,71,109,0.03)]">
-            <div className="mb-6 flex flex-col">
-              <h3 className="mb-1.5 text-xl text-[#464E5F] font-semibold uppercase">
-                Support
-              </h3>
-              <p className="text-gray-400">
-                Total {datas?.support.length}
-              </p>
-            </div>
-            <div className="flex flex-col">
-              <div className="border border-[#BDBDBD] rounded-lg">
-                <Table
-                  data={datas?.support}
-                  headers={headerSupport}
-                  truncate={true}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="col-span-1">
-          <div className="bg-white py-9 px-8 rounded-xl shadow-[0px_0px_20px_rgba(56,71,109,0.03)]">
-            <div className="mb-6 flex flex-col">
-              <h3 className="mb-1.5 text-xl text-[#464E5F] font-semibold uppercase">
-                Confidence
-              </h3>
-              <p className="text-gray-400">
-                Total {datas?.confidence.length}
-              </p>
-            </div>
-            <div className="flex flex-col">
-              <div className="border border-[#BDBDBD] rounded-lg">
-                <Table
-                  data={datas?.confidence}
-                  headers={headerConfidence}
-                  truncate={true}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+        </div> */}
+        <Tab.Panels>
+          {tabs.map((tab: any, idx: number) => (
+            <Tab.Panel
+              key={idx}
+              className="grid gap-11"
+            >
+              {tab.page}
+            </Tab.Panel>
+          ))}
+        </Tab.Panels>
+      </Tab.Group>
     </div >
   );
 }

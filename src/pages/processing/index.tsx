@@ -1,13 +1,14 @@
-import { calculateConfidence, calculateSupport, calculateSupportPercentage, generateAssociationRules, generateFrequentItemsets, twoDecimalPlacesWithoutRound } from '@/functions';
+import { fpGrowth, apriori } from '@/functions';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { useForm } from "react-hook-form";
 import { yupResolver } from '@hookform/resolvers/yup';
-import { Input, Date, Table, Button } from '@/components';
+import { Input, Date as DateInput, Table, Button, Select } from '@/components';
 import Layout from '@/layouts';
 import * as yup from "yup";
 import moment from 'moment';
 import axios from "axios";
+import { sum } from 'lodash';
 
 type FormData = yup.InferType<typeof schema>;
 const schema = yup.object({
@@ -15,6 +16,7 @@ const schema = yup.object({
   end_date: yup.date().nullable().notRequired(),
   min_support: yup.number().transform((value) => (isNaN(value) ? undefined : value)).required("Min Support harus diisi"),
   min_confidence: yup.number().transform((value) => (isNaN(value) ? undefined : value)).required("Min Confidence harus diisi"),
+  algorithm: yup.object().shape({ key: yup.number(), label: yup.string() }).default(undefined).required("Algoritma harus diisi"),
   total_record: yup.number(),
 }).required();
 
@@ -34,28 +36,20 @@ export default function Dashboard() {
       width: 60
     },
     {
+      fieldId: 'algorithm',
+      label: 'Algoritma',
+      renderItem: (algorithm: string) => (<>
+        {algorithm}
+      </>),
+      width: 150
+    },
+    {
       fieldId: 'processed_date',
       label: 'Tanggal Proses',
       renderItem: (processed_date: string) => (<>
         {moment(processed_date).format('DD-MM-yyyy hh:mm')}
       </>),
       width: 140
-    },
-    {
-      fieldId: 'start_date',
-      label: 'Tanggal Mulai',
-      renderItem: (start_date: string) => (<>
-        {start_date ? moment(start_date).format('DD-MM-yyyy') : "Semua Tanggal"}
-      </>),
-      width: 130
-    },
-    {
-      fieldId: 'end_date',
-      label: 'Tanggal Akhir',
-      renderItem: (end_date: string) => (<>
-        {end_date ? moment(end_date).format('DD-MM-yyyy') : "Semua Tanggal"}
-      </>),
-      width: 130
     },
     {
       fieldId: 'min_support',
@@ -77,6 +71,21 @@ export default function Dashboard() {
       fieldId: 'total_order',
       label: 'Total Data',
       width: 80
+    },
+  ];
+
+  const algorithmOptions = [
+    {
+      key: 1,
+      label: 'Apriori'
+    },
+    {
+      key: 2,
+      label: 'FP-Growth'
+    },
+    {
+      key: 3,
+      label: 'Apriori & FP-Growth'
     },
   ];
 
@@ -128,10 +137,49 @@ export default function Dashboard() {
     await getSummary();
   };
 
-  const handleCalculate = async (fields: FormData) => {
-    const { start_date, end_date, min_support, min_confidence } = fields
+  const onSubmitApriori = async (dataset: any[], minSupport: number, minConfidence: number, summaryId: number, algorithm: string | undefined) => {
+    const [supports, rules, processingFrequentItemsets, processingAssociationRules] = await apriori(dataset, minSupport, minConfidence);
+    try {
+      const res = await axios.post("/api/algorithm", {
+        summary_id: summaryId,
+        name: "Apriori",
+        processing_frequent_itemsets: processingFrequentItemsets,
+        processing_association_rules: processingAssociationRules,
+        processing_time: sum([processingFrequentItemsets, processingAssociationRules])
+      })
+      const algorithm_id = res.data.algorithm_id
+      const supportsList: any[] = supports.map((obj: any) => ({ algorithm_id, ...obj }))
+      const rulesList: any[] = rules.map((obj: any) => ({ algorithm_id, ...obj }))
+      await axios.post("/api/support", { supports: supportsList })
+      await axios.post("/api/rule", { rules: rulesList })
+    } catch (err) {
+      console.log('error: ', err);
+    }
+  };
 
-    // Get transaction
+  const onSubmitFpGrowth = async (dataset: any[], minSupport: number, minConfidence: number, summaryId: number, algorithm: string | undefined) => {
+    const [supports, rules, processingFrequentItemsets, processingAssociationRules] = await fpGrowth(dataset, minSupport, minConfidence);
+    try {
+      const res = await axios.post("/api/algorithm", {
+        summary_id: summaryId,
+        name: "FP-Growth",
+        processing_frequent_itemsets: processingFrequentItemsets,
+        processing_association_rules: processingAssociationRules,
+        processing_time: sum([processingFrequentItemsets, processingAssociationRules])
+      })
+      const algorithm_id = res.data.algorithm_id
+      const supportsList: any[] = supports.map((obj: any) => ({ algorithm_id, ...obj }))
+      const rulesList: any[] = rules.map((obj: any) => ({ algorithm_id, ...obj }))
+      await axios.post("/api/support", { supports: supportsList })
+      await axios.post("/api/rule", { rules: rulesList })
+    } catch (err) {
+      console.log('error: ', err);
+    }
+  };
+
+  const handleCalculate = async (fields: FormData) => {
+    const { start_date, end_date, min_support, min_confidence, algorithm } = fields
+
     const { data } = await axios.get("/api/transaction", {
       params: {
         start_date: start_date ? moment(start_date).format('yyyy-MM-DD') : null,
@@ -139,75 +187,32 @@ export default function Dashboard() {
       }
     })
 
-    // Post summary
-    const resSummary = await axios.post("/api/process", {
-      start_date: start_date ? moment(start_date).format('yyyy-MM-DD') : null,
-      end_date: start_date ? moment(end_date).format('yyyy-MM-DD') : null,
-      min_support,
-      min_confidence,
-      total_order: data.length
-    })
-
-    const summary_id = resSummary.data.summary_id
     const dataset: any[] = []
     data.forEach((element: any) => {
       const splited = element.products.split(",")
       dataset.push(splited)
     });
 
-    // Generate frequent itemsets
-    const frequentItemsets = generateFrequentItemsets(dataset, min_support);
-
-    // Output the result
-    var supportList = []
-    for (let itemset of frequentItemsets) {
-      let support = calculateSupportPercentage(dataset, itemset);
-      supportList.push({
-        summary_id: summary_id,
-        itemset: itemset.length,
-        candidate: itemset.toString(),
-        support: twoDecimalPlacesWithoutRound(support)
+    try {
+      const res = await axios.post("/api/process", {
+        start_date: start_date ? moment(start_date).format('yyyy-MM-DD') : null,
+        end_date: start_date ? moment(end_date).format('yyyy-MM-DD') : null,
+        min_support,
+        min_confidence,
+        total_order: data.length,
+        algorithm: algorithm.label
       })
-    }
-
-    // Post support
-    try {
-      await axios.post("/api/support", { supports: supportList })
-    } catch (e) {
-      console.log('e', e);
-    }
-
-    var ruleArray = []
-    for (let itemset of frequentItemsets) {
-      let rules = generateAssociationRules(dataset, itemset, frequentItemsets, min_confidence / 100);
-      for (let rule of rules) {
-
-        // Calculate support values
-        let confidence = calculateConfidence(dataset, rule.antecedent, rule.consequent, frequentItemsets);
-        const supportB = calculateSupport(dataset, rule.consequent);
-        const N = dataset.length;
-
-        // Calculate lift ratio
-        const liftRatio = twoDecimalPlacesWithoutRound(confidence / (supportB / N));
-
-        let description: string = ''
-        if (liftRatio > 1) {
-          description = 'POSITIVE';
-        } else if (liftRatio < 1) {
-          description = 'NEGATIVE';
-        } else {
-          description = 'INDEPENDENT';
-        }
-
-        ruleArray.push([summary_id, `${rule.antecedent.join(',')} -> ${rule.consequent.join(',')}`, rule.confidence, liftRatio, description])
+      const summary_id = res.data.summary_id
+      if (algorithm.key === 1) {
+        await onSubmitApriori(dataset, min_support, min_confidence, summary_id, algorithm.label);
+      } else if (algorithm.key === 2) {
+        await onSubmitFpGrowth(dataset, min_support, min_confidence, summary_id, algorithm.label);
+      } else {
+        await onSubmitApriori(dataset, min_support, min_confidence, summary_id, algorithm.label);
+        await onSubmitFpGrowth(dataset, min_support, min_confidence, summary_id, algorithm.label);
       }
-    }
-
-    // Post rule
-    try {
-      await axios.post("/api/rule", { confidence: ruleArray })
-    } catch (e) {
-      console.log('e', e);
+    } catch (err) {
+      console.log('error: ', err);
     }
   }
 
@@ -217,11 +222,11 @@ export default function Dashboard() {
         <div className="bg-white py-9 px-8 rounded-xl shadow-[0px_0px_20px_rgba(56,71,109,0.03)]">
           <div className="mb-6 flex items-center justify-between gap-4">
             <h3 className="text-xl text-[#464E5F] font-semibold uppercase">
-              Proses Apriori
+              Proses Apriori & FP-Growth
             </h3>
           </div>
           <form className="space-y-6" onSubmit={handleSubmit(onSubmit)} autoComplete="off">
-            <Date
+            <DateInput
               label="Tanggal Mulai"
               placeholder="Tanggal Mulai"
               dateFormat="DD-MM-yyyy"
@@ -230,7 +235,7 @@ export default function Dashboard() {
               control={control}
               error={errors.start_date?.message}
             />
-            <Date
+            <DateInput
               label="Tanggal Akhir"
               placeholder="Tanggal Akhir"
               dateFormat="DD-MM-yyyy"
@@ -260,6 +265,14 @@ export default function Dashboard() {
               prefix="%"
               register={register}
               error={errors.min_confidence?.message}
+            />
+            <Select
+              label="Algoritma"
+              name="algorithm"
+              placeholder="Pilih Algoritma"
+              options={algorithmOptions}
+              control={control}
+              error={errors.algorithm?.message}
             />
             <Input
               label="Total Data"

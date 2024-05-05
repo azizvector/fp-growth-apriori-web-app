@@ -13,14 +13,15 @@ export default async function handler(req, res) {
 
 const saveSummary = async (req, res) => {
   try {
-    const { start_date, end_date, min_support, min_confidence, total_order } = req.body;
+    const { start_date, end_date, min_support, min_confidence, total_order, algorithm } = req.body;
     const result = await pool.query("INSERT INTO summary SET ?", {
       start_date,
       end_date,
       min_support,
       min_confidence,
       total_order,
-      processed_date: new Date()
+      processed_date: new Date(),
+      algorithm,
     });
     return res.status(200).json({ summary_id: result.insertId });
   } catch (error) {

@@ -16,13 +16,45 @@ const getSummary = async (req, res) => {
     const summary = await pool.query("SELECT * FROM summary WHERE summary_id = ?", [
       req.query.id,
     ]);
-    const support = await pool.query("SELECT * FROM support WHERE summary_id = ? ORDER BY itemset DESC, support DESC", [
+    const algorithm = await pool.query("SELECT * FROM algorithm WHERE summary_id = ?", [
       req.query.id,
     ]);
-    const confidence = await pool.query("SELECT * FROM rule WHERE summary_id = ? ORDER BY confidence DESC", [
-      req.query.id,
-    ]);
-    return res.status(200).json({ summary: summary[0], support: support, confidence: confidence});
+
+    const result = {};
+
+    if (algorithm[0].name) {
+      const supports = await pool.query("SELECT * FROM support WHERE algorithm_id = ? ORDER BY itemset DESC, support DESC", [
+        algorithm[0].algorithm_id,
+      ]);
+      const rules = await pool.query("SELECT * FROM rule WHERE algorithm_id = ? ORDER BY confidence DESC", [
+        algorithm[0].algorithm_id,
+      ]);
+
+      result[algorithm[0].name === "Apriori" ? "apriori" : "fp_growth"] = {
+        summary: summary[0],
+        algorithm: algorithm[0],
+        supports,
+        rules
+      };
+    }
+
+    if (algorithm[1]) {
+      const supports = await pool.query("SELECT * FROM support WHERE algorithm_id = ? ORDER BY itemset DESC, support DESC", [
+        algorithm[1].algorithm_id,
+      ]);
+      const rules = await pool.query("SELECT * FROM rule WHERE algorithm_id = ? ORDER BY confidence DESC", [
+        algorithm[1].algorithm_id,
+      ]);
+
+      result[algorithm[1].name === "Apriori" ? "apriori" : "fp_growth"] = {
+        summary: summary[0],
+        algorithm: algorithm[1],
+        supports,
+        rules
+      };
+    }
+
+    return res.status(200).json(result);
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
