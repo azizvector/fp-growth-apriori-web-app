@@ -46,6 +46,8 @@
   <tr>
     <td width="50%" style="padding: 0;">
       <img alt="detail" src="./public/images/detail-apriori.png">
+    </td>
+    <td width="50%" style="padding: 0;">
       <img alt="detail" src="./public/images/detail-fp-growth.png">
     </td>
   </tr>
@@ -56,6 +58,8 @@
   <tr>
     <td width="50%" style="padding: 0;">
       <img alt="detail" src="./public/images/detail-perbandingan-ringkasan.png">
+    </td>
+    <td width="50%" style="padding: 0;">
       <img alt="detail" src="./public/images/detail-perbandingan-hasil.png">
     </td>
   </tr>
